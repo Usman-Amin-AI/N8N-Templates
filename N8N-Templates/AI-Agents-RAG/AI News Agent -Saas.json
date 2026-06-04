@@ -1,0 +1,848 @@
+{
+  "name": "AI News Agent - SaaS v1",
+  "nodes": [
+    {
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-820, 320],
+      "parameters": {}
+    },
+
+    {
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger (user configurable)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [-820, 520],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+
+    {
+      "id": "webhook-api",
+      "name": "Webhook - API (subscribe / generate)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [-820, 120],
+      "parameters": {
+        "path": "ai-news-agent",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "responseData": "json",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "parse-user-prefs",
+      "name": "Set - Parse User Preferences",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [-600, 120],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId || $json.email || $json.body?.userId || $json.query?.userId }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.email || $json.body?.email }}"
+            },
+            {
+              "name": "channels",
+              "value": "={{ $json.channels || $json.body?.channels || ['email'] }}"
+            },
+            {
+              "name": "language",
+              "value": "={{ $json.language || $json.body?.language || 'en' }}"
+            },
+            {
+              "name": "categories",
+              "value": "={{ $json.categories || $json.body?.categories || ['tech','world'] }}"
+            },
+            {
+              "name": "rssSources",
+              "value": "={{ $json.rssSources || $json.body?.rssSources || ['https://www.theverge.com/rss/index.xml','https://feeds.bbci.co.uk/news/world/rss.xml'] }}"
+            },
+            {
+              "name": "deliveryTime",
+              "value": "={{ $json.deliveryTime || $json.body?.deliveryTime || '07:00' }}"
+            },
+            {
+              "name": "summaryStyle",
+              "value": "={{ $json.summaryStyle || $json.body?.summaryStyle || 'bullet' }}"
+            },
+            {
+              "name": "includeKeywords",
+              "value": "={{ $json.includeKeywords || $json.body?.includeKeywords || [] }}"
+            },
+            {
+              "name": "excludeKeywords",
+              "value": "={{ $json.excludeKeywords || $json.body?.excludeKeywords || [] }}"
+            },
+            {
+              "name": "priorityWeights",
+              "value": "={{ $json.priorityWeights || $json.body?.priorityWeights || { 'ai':1, 'crypto':1 } }}"
+            }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "persist-user",
+      "name": "Postgres: Persist User Preferences",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [-380, 120],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO users (user_id, email, channels, language, categories, rss_sources, delivery_time, summary_style, include_keywords, exclude_keywords, priority_weights) VALUES ({{ $json.userId ? `'${$json.userId}'` : 'DEFAULT' }}, '{{ $json.email }}', '{{ JSON.stringify($json.channels) }}', '{{ $json.language }}', '{{ JSON.stringify($json.categories) }}', '{{ JSON.stringify($json.rssSources) }}', '{{ $json.deliveryTime }}', '{{ $json.summaryStyle }}', '{{ JSON.stringify($json.includeKeywords) }}', '{{ JSON.stringify($json.excludeKeywords) }}', '{{ JSON.stringify($json.priorityWeights) }}') ON CONFLICT (user_id) DO UPDATE SET email=EXCLUDED.email, channels=EXCLUDED.channels;"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CRED_ID",
+          "name": "Postgres Account"
+        }
+      }
+    },
+
+    {
+      "id": "expand-rss-list",
+      "name": "Function - Expand RSS Sources",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-200, 320],
+      "parameters": {
+        "functionCode": "const rss = $json.rssSources || ['https://www.theverge.com/rss/index.xml','https://feeds.bbci.co.uk/news/world/rss.xml'];\nreturn rss.map(u => ({ json: { url: u } }));"
+      }
+    },
+
+    {
+      "id": "rss-reader",
+      "name": "RSS Feed Read (dynamic)",
+      "type": "n8n-nodes-base.rssFeedReadTool",
+      "typeVersion": 1.2,
+      "position": [20, 320],
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "filter-keywords",
+      "name": "Function - Apply Keyword Include/Exclude & Category Filter",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [240, 320],
+      "parameters": {
+        "functionCode": "const include = $items()[0].json.includeKeywords || [];\nconst exclude = $items()[0].json.excludeKeywords || [];\nconst categories = $items()[0].json.categories || [];\n\nreturn items.filter(item => {\n  const title = (item.json.title || '').toLowerCase();\n  const content = (item.json.contentSnippet || item.json.content || '').toLowerCase();\n  // exclude\n  for (const ex of exclude) if ((title + ' ' + content).includes(ex.toLowerCase())) return false;\n  // include if include list non-empty\n  if (include.length > 0) {\n    let keep = false;\n    for (const inc of include) if ((title + ' ' + content).includes(inc.toLowerCase())) { keep = true; break; }\n    if (!keep) return false;\n  }\n  return true;\n});"
+      }
+    },
+
+    {
+      "id": "image-fetch",
+      "name": "HTTP Request - Fetch OG image (thumbnail)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [460, 320],
+      "parameters": {
+        "url": "={{ $json.link }}",
+        "responseFormat": "string",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "extract-image",
+      "name": "Function - Extract OG image from HTML (placeholder)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [660, 320],
+      "parameters": {
+        "functionCode": "const html = items[0].binary ? '' : (items[0].json || {}).body || items[0].json;\n// Simple OG extractor fallback\nconst body = (items[0].json || {}).body || items[0].json;\nlet url = null;\nif (typeof body === 'string'){\n  const m = body.match(/<meta property=\\\"og:image\\\" content=\\\"([^\\\"]+)/i);\n  if(m) url = m[1];\n}\nreturn [{ json: { thumbnail: url || '' } }];"
+      }
+    },
+
+    {
+      "id": "sentiment-analysis",
+      "name": "Function - Sentiment Scoring (simple)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [860, 320],
+      "parameters": {
+        "functionCode": "const txt = ($json.title || '') + ' ' + ($json.contentSnippet || $json.content || '');\n// Very basic sentiment placeholder — replace with AI classification node for production\nconst negative = ['death','crash','loses','loss','fail','accident','decline'];\nconst positive = ['surge','raise','gain','win','success','increase','record'];\nlet score = 0;\nfor (const w of negative) if (txt.toLowerCase().includes(w)) score -= 1;\nfor (const w of positive) if (txt.toLowerCase().includes(w)) score += 1;\nlet sentiment = 'neutral';\nif (score > 0) sentiment = 'positive';\nif (score < 0) sentiment = 'negative';\nreturn [{ json: { sentiment, sentimentScore: score } }];"
+      }
+    },
+
+    {
+      "id": "keywords-extract",
+      "name": "Function - Extract Top Keywords",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1060, 320],
+      "parameters": {
+        "functionCode": "const text = ($json.title || '') + ' ' + ($json.contentSnippet || $json.content || '');\nconst words = text.toLowerCase().replace(/[^a-z0-9 ]+/g,' ').split(/\\s+/).filter(w => w.length>3);\nconst freq = {};\nfor(const w of words) freq[w] = (freq[w]||0)+1;\nconst keys = Object.keys(freq).sort((a,b)=>freq[b]-freq[a]).slice(0,5);\nreturn [{ json: { keywords: keys } }];"
+      }
+    },
+
+    {
+      "id": "rag-retrieval",
+      "name": "HTTP Request - RAG Retrieval Placeholder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1260, 320],
+      "parameters": {
+        "url": "=https://your-vector-db.example/retrieve?query={{ encodeURIComponent($json.title || '') }}",
+        "responseFormat": "json",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "compose-payload",
+      "name": "Set - Compose Summarization Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [1460, 320],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "title", "value": "={{ $json.title }}" },
+            { "name": "link", "value": "={{ $json.link }}" },
+            { "name": "content", "value": "={{ $json.contentSnippet || $json.content || '' }}" },
+            { "name": "thumbnail", "value": "={{ $json.thumbnail || '' }}" },
+            { "name": "sentiment", "value": "={{ $json.sentiment || 'neutral' }}" },
+            { "name": "keywords", "value": "={{ JSON.stringify($json.keywords || []) }}" },
+            { "name": "source", "value": "={{ $json.feedUrl || $json.source || '' }}" },
+            { "name": "published", "value": "={{ $json.pubDate || $json.isoDate || '' }}" }
+          ]
+        }
+      }
+    },
+
+    {
+      "id": "ai-summarizer",
+      "name": "AI Summary Agent (Langchain/Gemini) - Multi-style",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [1660, 320],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarize the following articles into a consolidated daily newsletter. Output language: {{ $jsonSettings.language || 'en' }}. Style: {{ $jsonSettings.summaryStyle || 'bullet' }}. Include source, published date, 2-sentence summary each, sentiment label, top keywords, and thumbnail links. Today's date: {{ $today }}. Articles: {{ JSON.stringify($items()) }}",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "set-output-format",
+      "name": "Function - Format Final Newsletter (HTML/Text)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1860, 320],
+      "parameters": {
+        "functionCode": "const style = $items()[0].json.summaryStyle || 'bullet';\nconst language = $items()[0].json.language || 'en';\nconst articles = items.map((it)=>it.json);\nlet html = `<h1>Daily AI Summary - ${new Date().toLocaleDateString()}</h1>`;\nfor (const a of articles){\n  html += `<h2><a href=\\\"${a.link}\\\">${a.title}</a></h2>`;\n  html += `<p>${a.content}</p>`;\n  html += `<p><strong>Sentiment:</strong> ${a.sentiment} | <strong>Keywords:</strong> ${a.keywords}</p>`;\n  if(a.thumbnail) html += `<img src=\\\"${a.thumbnail}\\\" alt=\\\"thumb\\\" style=\\\"max-width:200px\\\"/>`;\n}\nreturn [{ json: { html, text: html.replace(/<[^>]+>/g,'') } }];"
+      }
+    },
+
+    {
+      "id": "pdf-generation",
+      "name": "HTML to PDF (placeholder)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2060, 320],
+      "parameters": {
+        "url": "=https://your-html-to-pdf-service.example/convert",
+        "method": "POST",
+        "bodyContentType": "json",
+        "jsonParameters": true,
+        "options": {},
+        "sendBody": "={{ { html: $json.html, meta: { title: 'Daily AI Summary' } } }}"
+      }
+    },
+
+    {
+      "id": "tts-generation",
+      "name": "TTS - Generate MP3 (placeholder)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [2260, 320],
+      "parameters": {
+        "url": "=https://your-tts-provider.example/synthesize",
+        "method": "POST",
+        "bodyContentType": "json",
+        "jsonParameters": true,
+        "options": {},
+        "sendBody": "={{ { text: $json.text, voice: 'alloy', format: 'mp3' } }}"
+      }
+    },
+
+    {
+      "id": "upload-storage",
+      "name": "S3 / Drive Upload (store artifacts)",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [2460, 320],
+      "parameters": {
+        "operation": "upload",
+        "bucket": "={{ $env.BUCKET || 'ai-news-artifacts' }}",
+        "key": "={{ 'daily-' + Date.now() + '.pdf' }}",
+        "dataPropertyName": "binaryData"
+      },
+      "credentials": {
+        "aws": {
+          "id": "AWS_CRED_ID",
+          "name": "AWS Account"
+        }
+      }
+    },
+
+    {
+      "id": "persist-summary",
+      "name": "Postgres: Save Summary & Metadata",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [2660, 320],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO summaries (summary_id, user_id, date, html, text, artifacts) VALUES ('{{ $now }}', '{{ $json.userId || 'system' }}', '{{ new Date().toISOString() }}', '{{ $json.html || '' }}', '{{ $json.text || '' }}', '{{ JSON.stringify($json.artifacts || {}) }}');"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CRED_ID",
+          "name": "Postgres Account"
+        }
+      }
+    },
+
+    {
+      "id": "send-email",
+      "name": "Gmail - Send summary by email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2860, 160],
+      "parameters": {
+        "sendTo": "={{ $json.email || 'user@example.com' }}",
+        "subject": "={{ 'Daily AI Summary - ' + new Date().toLocaleDateString() }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CRED_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+
+    {
+      "id": "send-slack",
+      "name": "Slack - Post summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [2860, 320],
+      "parameters": {
+        "operation": "postMessage",
+        "channel": "={{ $json.slackChannel || '#news' }}",
+        "text": "={{ $json.text.substring(0,2000) }}"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CRED_ID",
+          "name": "Slack Bot"
+        }
+      }
+    },
+
+    {
+      "id": "send-telegram",
+      "name": "Telegram - send message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [2860, 480],
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $json.telegramChatId || '' }}",
+        "text": "={{ $json.text }}"
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CRED_ID",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+
+    {
+      "id": "send-twilio",
+      "name": "Twilio - SMS/WhatsApp (optional)",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [2860, 640],
+      "parameters": {
+        "operation": "sendMessage",
+        "to": "={{ $json.phone || '' }}",
+        "from": "TWILIO_FROM",
+        "message": "={{ $json.text.substring(0,160) }}"
+      },
+      "credentials": {
+        "twilioApi": {
+          "id": "TWILIO_CRED_ID",
+          "name": "Twilio Account"
+        }
+      }
+    },
+
+    {
+      "id": "feedback-collector",
+      "name": "Webhook - Collect Feedback",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [3060, 320],
+      "parameters": {
+        "path": "ai-news-feedback",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "responseData": "json"
+      }
+    },
+
+    {
+      "id": "persist-feedback",
+      "name": "Postgres - Persist Feedback",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [3260, 320],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO feedback (user_id, summary_id, rating, comments, ts) VALUES ('{{ $json.userId || 'anon' }}','{{ $json.summaryId || ''}}', {{ $json.rating || 0 }}, '{{ $json.comments || '' }}', '{{ new Date().toISOString() }}');"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CRED_ID",
+          "name": "Postgres Account"
+        }
+      }
+    },
+
+    {
+      "id": "analytics-sheet",
+      "name": "Google Sheets - Archive (optional)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [3460, 320],
+      "parameters": {
+        "operation": "append",
+        "sheetId": "GOOGLE_SHEET_ID",
+        "range": "A1",
+        "valueInputMode": "RAW",
+        "options": {
+          "values": "={{ [ [ new Date().toISOString(), $json.userId || 'system', $json.title || '', $json.keywords || '', $json.sentiment || '', $json.artifacts?.pdf || '' ] ] }}"
+        }
+      }
+    },
+
+    {
+      "id": "notify-admin",
+      "name": "Slack - Notify Admin",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [3660, 320],
+      "parameters": {
+        "operation": "postMessage",
+        "channel": "#ops",
+        "text": "={{ 'Summary delivered to user ' + ($json.userId || 'system') + ' at ' + new Date().toISOString() }}"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "SLACK_CRED_ID",
+          "name": "Slack Bot"
+        }
+      }
+    },
+
+    {
+      "id": "legacy-email",
+      "name": "Gmail - Legacy Send (original node kept)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2860, -40],
+      "parameters": {
+        "sendTo": "usmanamin9556@gmail.com",
+        "subject": "Your news daily summary",
+        "emailType": "text",
+        "message": "={{ $json.output || $json.text || 'No content' }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CRED_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+
+    {
+      "id": "original-get-tech",
+      "name": "Get Tech News (orig)",
+      "type": "n8n-nodes-base.rssFeedReadTool",
+      "typeVersion": 1.2,
+      "position": [-40, 760],
+      "parameters": {
+        "url": "https://www.theverge.com/rss/index.xml",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "original-get-world",
+      "name": "Get World News (orig)",
+      "type": "n8n-nodes-base.rssFeedReadTool",
+      "typeVersion": 1.2,
+      "position": [80, 760],
+      "parameters": {
+        "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "options": {}
+      }
+    },
+
+    {
+      "id": "ai-gemini-model",
+      "name": "Google Gemini Chat Model (orig)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-200, 760],
+      "parameters": {
+        "options": {}
+      },
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GOOGLE_PALM_CRED_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+
+  ],
+  "connections": {
+    "webhook-api": {
+      "main": [
+        [
+          {
+            "node": "parse-user-prefs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "parse-user-prefs": {
+      "main": [
+        [
+          {
+            "node": "persist-user",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "expand-rss-list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "persist-user": {
+      "main": [
+        [
+          {
+            "node": "notify-admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "expand-rss-list": {
+      "main": [
+        [
+          {
+            "node": "rss-reader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "rss-reader": {
+      "main": [
+        [
+          {
+            "node": "filter-keywords",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "image-fetch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filter-keywords": {
+      "main": [
+        [
+          {
+            "node": "image-fetch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "sentiment-analysis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "keywords-extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "image-fetch": {
+      "main": [
+        [
+          {
+            "node": "extract-image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract-image": {
+      "main": [
+        [
+          {
+            "node": "sentiment-analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sentiment-analysis": {
+      "main": [
+        [
+          {
+            "node": "keywords-extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "keywords-extract": {
+      "main": [
+        [
+          {
+            "node": "rag-retrieval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "rag-retrieval": {
+      "main": [
+        [
+          {
+            "node": "compose-payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "compose-payload": {
+      "main": [
+        [
+          {
+            "node": "ai-summarizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ai-summarizer": {
+      "main": [
+        [
+          {
+            "node": "set-output-format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set-output-format": {
+      "main": [
+        [
+          {
+            "node": "pdf-generation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "tts-generation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "persist-summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "send-email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "send-slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "send-telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "send-twilio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "legacy-email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pdf-generation": {
+      "main": [
+        [
+          {
+            "node": "upload-storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tts-generation": {
+      "main": [
+        [
+          {
+            "node": "upload-storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload-storage": {
+      "main": [
+        [
+          {
+            "node": "persist-summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "analytics-sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "feedback-collector": {
+      "main": [
+        [
+          {
+            "node": "persist-feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "manual-trigger": {
+      "main": [
+        [
+          {
+            "node": "expand-rss-list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "schedule-trigger": {
+      "main": [
+        [
+          {
+            "node": "expand-rss-list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "original-get-tech": {
+      "ai_tool": [
+        [
+          {
+            "node": "ai-gemini-model",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "original-get-world": {
+      "ai_tool": [
+        [
+          {
+            "node": "ai-gemini-model",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "ai-news-saas-v1"
+}

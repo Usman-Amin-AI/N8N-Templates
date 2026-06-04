@@ -1,0 +1,350 @@
+{
+  "name": "Abandoned Cart Recovery Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ]
+        }
+      },
+      "id": "dae678c0-49da-47e5-992f-16305241496f",
+      "name": "When Email Received",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        176,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "slackChannel",
+              "value": "<__PLACEHOLDER_VALUE__Slack channel ID for alerts__>",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "todoistProject",
+              "value": "<__PLACEHOLDER_VALUE__Todoist project ID__>",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "sheetsDocumentId",
+              "value": "<__PLACEHOLDER_VALUE__Google Sheets document ID__>",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "sheetsSheetName",
+              "value": "<__PLACEHOLDER_VALUE__Sheet name for tracking__>",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "85d71580-1350-4f60-8755-f298ce31470b",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a support email classification assistant.\n\nYour task is to analyze incoming support emails and extract the following information:\n1. Category: Classify the email into one of these categories: Technical Issue, Billing Question, Feature Request, General Inquiry, Complaint, or Other\n2. Priority: Determine urgency level as High, Medium, or Low based on:\n   - High: Critical system failures, security issues, payment problems, angry customers, urgent deadlines\n   - Medium: Non-critical bugs, account questions, feature requests with business impact\n   - Low: General questions, documentation requests, minor issues\n3. Sentiment: Analyze customer sentiment as Positive, Neutral, or Negative\n4. Summary: Provide a brief 1-2 sentence summary of the email content\n5. Suggested Action: Recommend next steps for handling this email\n\nAnalyze the email content carefully and return your classification."
+        }
+      },
+      "id": "98308a76-393b-424e-97c6-8338062a6852",
+      "name": "Email Classification Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        624,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "b6c83909-4192-4de1-a541-80b9f51b1a0f",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"category\": {\n      \"type\": \"string\"\n    },\n    \"priority\": {\n      \"type\": \"string\",\n      \"enum\": [\"High\", \"Medium\", \"Low\"]\n    },\n    \"sentiment\": {\n      \"type\": \"string\",\n      \"enum\": [\"Positive\", \"Neutral\", \"Negative\"]\n    },\n    \"summary\": {\n      \"type\": \"string\"\n    },\n    \"suggestedAction\": {\n      \"type\": \"string\"\n    }\n  }\n}"
+      },
+      "id": "08fe43a9-234d-4429-b035-13fada5b2a0c",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.priority }}",
+              "rightValue": "High",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "94522028-30e5-4997-b0bd-1e9fe519d522",
+      "name": "Check If High Priority",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').first().json.slackChannel }}"
+        },
+        "text": "=🚨 *High Priority Support Email*\n\n*From:* {{ $('When Email Received').first().json.from }}\n*Subject:* {{ $('When Email Received').first().json.subject }}\n*Category:* {{ $json.category }}\n*Sentiment:* {{ $json.sentiment }}\n\n*Summary:* {{ $json.summary }}\n\n*Suggested Action:* {{ $json.suggestedAction }}",
+        "otherOptions": {}
+      },
+      "id": "d9a026d7-3df2-4e8d-823e-65f5d7a9db1b",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1200,
+        448
+      ],
+      "webhookId": "4c3dec87-277e-4ac8-9e6e-ccd952a8879a"
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').first().json.todoistProject }}"
+        },
+        "content": "={{ $('When Email Received').first().json.subject }} - {{ $json.category }}",
+        "options": {
+          "description": "=From: {{ $('When Email Received').first().json.from }}\n\nPriority: {{ $json.priority }}\nSentiment: {{ $json.sentiment }}\n\nSummary: {{ $json.summary }}\n\nSuggested Action: {{ $json.suggestedAction }}",
+          "priority": "={{ $json.priority === 'High' ? 4 : $json.priority === 'Medium' ? 3 : 2 }}"
+        }
+      },
+      "id": "7262dccd-c2be-4cba-85d3-9b8d924ed7c9",
+      "name": "Create Task",
+      "type": "n8n-nodes-base.todoist",
+      "typeVersion": 2.1,
+      "position": [
+        1424,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Workflow Configuration').first().json.sheetsDocumentId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $('Workflow Configuration').first().json.sheetsSheetName }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $now.toISO() }}",
+            "From": "={{ $('When Email Received').first().json.from }}",
+            "Subject": "={{ $('When Email Received').first().json.subject }}",
+            "Category": "={{ $json.category }}",
+            "Priority": "={{ $json.priority }}",
+            "Sentiment": "={{ $json.sentiment }}",
+            "Summary": "={{ $json.summary }}",
+            "TaskID": "={{ $('Create Task').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "90178f2e-aa6c-4f8a-bfc3-bf9cf91a00f0",
+      "name": "Update Tracking Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1648,
+        528
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "OSkEuChlSP3kM9gR",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Email Received": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Email Classification Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Classification Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Email Classification Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Classification Agent": {
+      "main": [
+        [
+          {
+            "node": "Check If High Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If High Priority": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Task": {
+      "main": [
+        [
+          {
+            "node": "Update Tracking Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slack Alert": {
+      "main": [
+        [
+          {
+            "node": "Create Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "abcb24d4-dc82-4ff2-893d-3cfa286e9121",
+  "meta": {
+    "instanceId": "bcba888d85da9e120c720f0d3753abab6e7c24cf8ebda3b485b2a8ae333fe3dc"
+  },
+  "id": "HVY5UkXm72FdjQWZ",
+  "tags": []
+}

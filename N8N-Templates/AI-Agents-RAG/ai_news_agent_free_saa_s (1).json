@@ -1,0 +1,39 @@
+{
+  "name": "AI News Agent - SaaS (Free & Full Feature)",
+  "nodes": [
+    {"id":"manual-trigger","name":"Manual Trigger","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[-900,200],"parameters":{}},
+    {"id":"schedule-trigger","name":"Schedule Trigger (CRON Configurable)","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1,"position":[-900,400],"parameters":{"rule":{"interval":[{"triggerAtHour":7}]}}},
+    {"id":"webhook-api","name":"Webhook - User Config","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[-900,0],"parameters":{"path":"ai-news-user","httpMethod":"POST","responseMode":"onReceived","responseData":"json"}},
+    {"id":"parse-user-prefs","name":"Function - Parse Preferences","type":"n8n-nodes-base.function","typeVersion":1,"position":[-700,0],"parameters":{"functionCode":"return [{json:{language:$json.language||'en',categories:$json.categories||['tech','world'],rssSources:$json.rssSources||['https://www.theverge.com/rss/index.xml','https://feeds.bbci.co.uk/news/world/rss.xml'],summaryStyle:$json.summaryStyle||'bullet',include:$json.include||[],exclude:$json.exclude||[]}}];"}},
+    {"id":"rss-dynamic","name":"Function - Expand RSS","type":"n8n-nodes-base.function","typeVersion":1,"position":[-700,200],"parameters":{"functionCode":"const rss=$json.rssSources||['https://www.theverge.com/rss/index.xml','https://feeds.bbci.co.uk/news/world/rss.xml'];return rss.map(u=>({json:{url:u}}));"}},
+    {"id":"rss-reader","name":"RSS Reader","type":"n8n-nodes-base.rssFeedRead","typeVersion":1,"position":[-500,200],"parameters":{"url":"={{$json.url}}"}},
+    {"id":"keyword-filter","name":"Function - Keyword Filter","type":"n8n-nodes-base.function","typeVersion":1,"position":[-300,200],"parameters":{"functionCode":"const include=$json.include||[];const exclude=$json.exclude||[];return items.filter(item=>{const t=(item.json.title+' '+(item.json.contentSnippet||'')).toLowerCase();if(exclude.some(w=>t.includes(w)))return false;if(include.length>0&&!include.some(w=>t.includes(w)))return false;return true;});"}},
+    {"id":"sentiment","name":"Function - Sentiment & Keywords","type":"n8n-nodes-base.function","typeVersion":1,"position":[-100,200],"parameters":{"functionCode":"return items.map(item=>{const t=(item.json.title+' '+(item.json.contentSnippet||'')).toLowerCase();const positives=['gain','rise','record'];const negatives=['crash','loss','decline'];let score=0;positives.forEach(w=>t.includes(w)&&(score++));negatives.forEach(w=>t.includes(w)&&(score--));item.json.sentiment=score>0?'positive':score<0?'negative':'neutral';const words=t.replace(/[^a-z0-9 ]+/g,' ').split(/\s+/);const freq={};for(const w of words)freq[w]=(freq[w]||0)+1;item.json.keywords=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]).slice(0,5);return item;});"}},
+    {"id":"libretranslate","name":"HTTP - LibreTranslate","type":"n8n-nodes-base.httpRequest","typeVersion":1,"position":[100,200],"parameters":{"url":"https://libretranslate.com/translate","method":"POST","jsonParameters":true,"sendBody":"={{{q:$json.contentSnippet||$json.title,target:$json.language||'en',source:'auto'}}}"}},
+    {"id":"ollama-llm","name":"HTTP - Ollama Summarizer","type":"n8n-nodes-base.httpRequest","typeVersion":1,"position":[300,200],"parameters":{"url":"http://localhost:11434/api/generate","method":"POST","jsonParameters":true,"sendBody":"={{{model:'llama3',prompt:`You are an expert AI summarizer. Create a ${$json.summaryStyle} newsletter with headline, summary, sentiment, keywords, link, source, date. Language: ${$json.language}. Today: ${new Date().toDateString()}. Articles: ${JSON.stringify($items().map(i=>i.json))}`}}}"}},
+    {"id":"formatter","name":"Function - Format HTML/Text","type":"n8n-nodes-base.function","typeVersion":1,"position":[500,200],"parameters":{"functionCode":"return[{json:{html:$json.response||'',text:($json.response||'').replace(/<[^>]+>/g,'')}}];"}},
+    {"id":"pdf-gen","name":"Write Binary File - PDF","type":"n8n-nodes-base.writeBinaryFile","typeVersion":1,"position":[700,200],"parameters":{"fileName":"/data/newsletters/daily.pdf","data":"={{Buffer.from($json.html)}}"}},
+    {"id":"tts-coqui","name":"HTTP - Coqui TTS","type":"n8n-nodes-base.httpRequest","typeVersion":1,"position":[700,400],"parameters":{"url":"http://localhost:5002/api/tts","method":"POST","jsonParameters":true,"sendBody":"={{{text:$json.text}}}"}},
+    {"id":"gmail","name":"Gmail - Send","type":"n8n-nodes-base.gmail","typeVersion":2.1,"position":[900,200],"parameters":{"sendTo":"user@example.com","subject":"Daily AI Summary","emailType":"html","message":"={{$json.html}}"}},
+    {"id":"slack","name":"Slack - Post","type":"n8n-nodes-base.slack","typeVersion":1,"position":[900,400],"parameters":{"operation":"postMessage","channel":"#news","text":"={{$json.text.substring(0,2000)}}"}},
+    {"id":"telegram","name":"Telegram - Send","type":"n8n-nodes-base.telegram","typeVersion":1,"position":[900,600],"parameters":{"operation":"sendMessage","chatId":"={{$json.chatId||''}}","text":"={{$json.text}}"}},
+    {"id":"archive","name":"Google Sheets - Archive","type":"n8n-nodes-base.googleSheets","typeVersion":1,"position":[1100,200],"parameters":{"operation":"append","sheetId":"GOOGLE_SHEET_ID","range":"A1","valueInputMode":"RAW","options":{"values":"={{[[new Date().toISOString(),$json.text]]}}"}}},
+    {"id":"feedback-webhook","name":"Webhook - Feedback","type":"n8n-nodes-base.webhook","typeVersion":1,"position":[1300,200],"parameters":{"path":"ai-news-feedback","httpMethod":"POST","responseMode":"onReceived"}}
+  ],
+  "connections": {
+    "manual-trigger":{"main":[[{"node":"rss-dynamic","type":"main","index":0}]]},
+    "schedule-trigger":{"main":[[{"node":"rss-dynamic","type":"main","index":0}]]},
+    "webhook-api":{"main":[[{"node":"parse-user-prefs","type":"main","index":0}]]},
+    "parse-user-prefs":{"main":[[{"node":"rss-dynamic","type":"main","index":0}]]},
+    "rss-dynamic":{"main":[[{"node":"rss-reader","type":"main","index":0}]]},
+    "rss-reader":{"main":[[{"node":"keyword-filter","type":"main","index":0}]]},
+    "keyword-filter":{"main":[[{"node":"sentiment","type":"main","index":0}]]},
+    "sentiment":{"main":[[{"node":"libretranslate","type":"main","index":0}]]},
+    "libretranslate":{"main":[[{"node":"ollama-llm","type":"main","index":0}]]},
+    "ollama-llm":{"main":[[{"node":"formatter","type":"main","index":0}]]},
+    "formatter":{"main":[[{"node":"pdf-gen","type":"main","index":0},{"node":"tts-coqui","type":"main","index":0},{"node":"gmail","type":"main","index":0},{"node":"slack","type":"main","index":0},{"node":"telegram","type":"main","index":0},{"node":"archive","type":"main","index":0}]]}
+  },
+  "active":false,
+  "settings":{},
+  "versionId":"free-full-feature-v1"
+}

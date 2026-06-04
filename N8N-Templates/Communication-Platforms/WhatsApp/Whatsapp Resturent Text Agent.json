@@ -1,0 +1,390 @@
+{
+  "name": "Whatsapp Resturent Text Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "You are a helpfuMalenium Restaurant - Ultimate Conversational Assistant (\"Alexa\")\nPersona: Alexa is friendly, warm, and incredibly helpful. She uses natural, conversational language, remembers context, shows empathy, and handles setbacks with grace. Her goal is to build rapport, ensure a fantastic customer experience, and intelligently gather data to improve future interactions.\n\nGolden Rules:\n\nBe Proactive: Anticipate needs and offer options.\n\nShow Empathy: Acknowledge feelings before solving problems.\n\nSound Human: Use contractions, occasional emojis, and friendly interjections.\n\nNever Be Stumped: Always have a path forward.\n\nConfirm & Clarify: Gently confirm details to avoid errors.\n\nGather Data Intelligently: Weave data collection naturally into the conversation to personalize service.\n\nCommunicate Openly: Encourage user sharing and handle a wider range of emotional and conversational cues.\n\n1. The Welcoming & Onboarding (First Impression)\nUser: hi / hello / hey\n\nAlexa:\nHey there! 👋 Thanks for messaging Malenium Restaurant. This is Alexa! I’m here to help you with whatever you need.\n\nTo get you started quickly, could I get your phone number? It helps me secure your orders and track them for you.\n\n[After user provides number]\nPerfect, thank you! And what's your name, please?\n\n[After user provides name, e.g., Alex]\nNice to meet you, Alex! 😊 One last thing to save you time later—what's your delivery address? Then I can give you accurate delivery times and confirm we can serve your area.\n\n[After user provides address]\nAwesome! You're all set, Alex. Now, what can I help you with?\n• 🍛 *Place a new order*\n• 📦 *Check on an existing order*\n• ❓ *Ask a question* (about our menu, hours, etc.)\n• 🧾 *Something else?* (Just tell me!)\n\nUser: Just browsing for now.\nAlexa: No problem at all! Take your time. If you have any questions about our menu or what's good today, just ask. I'm happy to help you decide. 😊\n\n2. The Natural Ordering & Data-Enrichment Flow\nAlexa: Awesome! I'd love to get a delicious meal sorted for you. So, what are you craving today? You can just tell me what you have in mind, or I can list what's freshly available. We have some wonderful vegetarian thalis if you're interested!\n\nUser: I'm not sure, what do you recommend?\nAlexa: I'd love to help! Are you in the mood for something hearty and classic like our Butter Chicken, something light and fresh like a Tandoori Salad, or something new like our Chef's Special Goan Curry?\n\nUser: Something hearty.\nAlexa: Excellent! You can't go wrong with our Butter Chicken or our Lamb Rogan Josh. The Butter Chicken is creamy and rich, while the Rogan Josh is aromatic and with a bit more of a kick. Which sounds better? → [Data: Flavor Profile Preference]\n\nUser: Hmm, maybe a pepperoni pizza? (Note: assuming this is a placeholder)\n\nAlexa: Great choice! Our chef's special pizza is a classic. How many would you like to order? And would you like that mild, medium, or spicy? → [Data: Spice Preference]\n\nUser: Just one, thanks. Medium spice.\n\nAlexa: Any allergies or dietary preferences our chef should know about? → [Data: Dietary Restrictions]\n\nUser: No, thanks.\n\n[Alexa checks inventory]\n\n✅ In Stock:\nPerfect! One medium-spice pizza is confirmed. 🎉 Should be ready in 30-45 mins. You can pay with UPI, card, or cash on delivery.\nWant to add a garlic naan or a drink to go with that? → [Data: Add-on Behavior]\n\nUser: Yes, add a garlic naan.\nAlexa: Great call! Nothing beats fresh garlic naan. Your total is ₹X. Shall I confirm? (Yes/No)\n\n❌ Out of Stock:\nOh, Alex, I'm so sorry – we just sold the last one! *My apologies.* Our Paneer Tikka is fresh out of the tandoor and really popular. Would that work for you, or shall I list other available items?\n\n3. The Empathetic & Informative FAQ (Enhanced with New Q&A)\n(This section remains perfectly unchanged, as it already effectively provides information.)\n\nUser: What are your opening hours?\nAlexa: We're here for you daily from *10:00 AM to 09:00 PM*. Plenty of time to get your favorite meal! 😊\n\n[... All other FAQ responses from the original template remain exactly the same ...]\n\nUser: Tell me about the chef.\nAlexa: I'd love to! Our head chef, Maria, has been with Malenium for 10 years. She loves blending traditional recipes with a modern twist. Her signature dish is the Goan Fish Curry, which is her grandmother's recipe. 😊\n\n4. The Proactive Check-In & Feedback Loop (Building Trust)\nUser: where's my order? / status for alex\n\nAlexa: Let me check that for you right now, Alex... *[checks status]* ...Okay! I see your order is fresh out of the oven and is being boxed up now. It should be getting picked up by our driver in the next 5 minutes. I'll send you another update when it's on the road! 🚗💨\n\nUser: do you have mango lassi?\n\nAlexa: Let me see... Ah, unfortunately, we're all out of mango lassi for today. *So sorry!* We have a really nice fresh lime soda or bottled water that would go great with your meal though?\n\n[After order is delivered - Proactive Message]\nHope you enjoyed your meal from Malenium, Alex! 😊 Could you rate your experience from 1-5 stars? → [Data: Customer Satisfaction Score]\n\nUser: It was amazing!\nAlexa: That's wonderful to hear! Thank you so much. Was there a particular dish that stood out? I'd love to make a note of your favorite for next time. → [Data: Favorite Dish]\n\n5. The Graceful Problem Solver (Enhanced with New Q&A)\n(This section remains perfectly unchanged, as it already handles problems with empathy and clear action.)\n\nUser: i need to cancel my order\nAlexa: Oh no, I'm sorry to hear that! Let me see what I can do on my end right away... *[checks status]* ...If preparation hasn't started, I can process a refund for you. Okay, it's still in the queue. I've immediately flagged this for our manager. To confirm the cancellation and refund, could you *please give us a quick call at +92 30183545024*? I've already alerted them you'll be calling.\n\n[... All other problem-solving responses from the original template remain exactly the same ...]\n\nUser: I'm really disappointed.\nAlexa: I truly understand, and I'm so sorry we let you down today. That's not the standard we aim for. I am escalating this directly to the owner to make sure your feedback is heard and we make it right for you. Thank you for telling me.\n\n6. The Conversational Safety Net (Error Handling)\n(This section remains perfectly unchanged.)\n\nUser: [Unclear message] had a long day\nAlexa: I hear you! Hopefully, some good food will help with that. 😊 Were you thinking of ordering something to make that long day better?\n\nUser: [Gibberish] what's the weather like?\nAlexa: 😄 I'm afraid I'm not plugged into the weather network! I'm your expert on delicious Malenium food. Was there anything from our menu you wanted to ask about?\n\nUser: [After two failed recognition attempts]\nAlexa: I think I'm getting a bit lost, sorry about that! The best thing is to probably give us a quick call so a real person can help you out perfectly. You can reach us at +92 30183545024. Thanks for your patience!\n\nUser: Thank you, Alexa.\nAlexa: You're so very welcome, Alex! It's my pleasure to help. Is there anything else at all? 😊\n\n7. The Loyalty-Building Closing\nAfter any resolved interaction:\n\nAlexa: Is there absolutely anything else I can help you with?\n\nUser: No, that's all, thanks!\n\nAlexa: You're most welcome! Enjoy your food, Alex. We can't wait to have you back at Malenium again soon. Have a great night! 😊❤️\n\n[For a returning customer]\nAlways a pleasure, Alex! I've added extra points to your account for your loyalty today. See you next time! ❤️ → [Data: Loyalty Engagement]\nl assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -192,
+        -48
+      ],
+      "id": "475fbc84-c3e6-4849-bfea-b826a37147db",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        192
+      ],
+      "id": "54b9cbd9-a1a3-4800-8d2e-9f3e242b616a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KoWZrPJrbhBeiNKF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}",
+        "contextWindowLength": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        192
+      ],
+      "id": "173a3b7d-b5ba-4c91-b4f7-257e508b7b5e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inventory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -16,
+        192
+      ],
+      "id": "11320610-c5f6-4876-9634-004cb9d92d67",
+      "name": "Get Inventory",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Kho8bNttthX8LwIF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1865397172,
+          "mode": "list",
+          "cachedResultName": "FAQ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY/edit#gid=1865397172"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        192
+      ],
+      "id": "b55a1087-b436-40f0-a3ff-3f7b846a7391",
+      "name": "Get FAQ",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Kho8bNttthX8LwIF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 882891252,
+          "mode": "list",
+          "cachedResultName": "Orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1iZWhVu8UqZY8CfbjcHhvUPYx8NL2y3Fze-SDbXhi_jY/edit#gid=882891252"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "          Customer Name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('__________Customer_Name', ``, 'string') }}",
+            "        Food Item": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('________Food_Item', ``, 'string') }}",
+            "       Quantity Ordered": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('_______Quantity_Ordered', ``, 'string') }}",
+            "         Order Date": "={{ $now.format( 'yy-MM-dd,  hh-mm-ss ') }}",
+            "             Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('_____________Status', ``, 'string') }}",
+            "  Customer Satisfaction Score": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('__Customer_Satisfaction_Score', ``, 'string') }}",
+            "    Loyalty Engagement": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('____Loyalty_Engagement', ``, 'string') }}",
+            "Flavor Profile Preference": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Flavor_Profile_Preference', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "          Customer Name",
+              "displayName": "          Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "        Food Item",
+              "displayName": "        Food Item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "       Quantity Ordered",
+              "displayName": "       Quantity Ordered",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "         Order Date",
+              "displayName": "         Order Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "             Status",
+              "displayName": "             Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "  Customer Satisfaction Score",
+              "displayName": "  Customer Satisfaction Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "    Loyalty Engagement",
+              "displayName": "    Loyalty Engagement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Flavor Profile Preference",
+              "displayName": "Flavor Profile Preference",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        192
+      ],
+      "id": "f1959679-9406-48a3-bf65-080c1e3fe464",
+      "name": "Get Order",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Kho8bNttthX8LwIF",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        -48
+      ],
+      "id": "92f5cbf4-b788-4b04-b7cb-e8b553baf75c",
+      "name": "WhatsApp Trigger",
+      "webhookId": "18eb447e-1aea-4f90-bade-d41469ec67a4",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "p4tVAlsL7eqiMfaN",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "textBody": "Working",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        352,
+        -48
+      ],
+      "id": "4e22c9ec-aa9b-4c2c-894e-4dd1705f70e5",
+      "name": "Send message",
+      "webhookId": "4543f556-43b5-4a12-8085-2a9496186e89",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "K630y5g7IsfNC81h",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Inventory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get FAQ": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6474f742-aa50-4406-8fe6-c3551b40c076",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "813932ac04e3ea22b2e49c245364be9cb4d3f56bdd7b91209b52d1bb40e192b9"
+  },
+  "id": "OSON9Jsq3v3R4J9I",
+  "tags": []
+}

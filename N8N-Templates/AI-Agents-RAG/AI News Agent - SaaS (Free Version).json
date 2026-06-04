@@ -1,0 +1,207 @@
+{
+  "name": "AI News Agent - SaaS (Free Version)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "47ac1864-672b-47cc-a9cb-8c687b6c716b",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        192,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "f4718938-d2ae-4575-b69a-d3c2f7e310b9",
+      "name": "Schedule Trigger (User Configurable)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        192,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const rss = ['https://www.theverge.com/rss/index.xml','https://feeds.bbci.co.uk/news/world/rss.xml'];\nreturn rss.map(u => ({ json: { url: u } }));"
+      },
+      "id": "174a8d46-bc5d-4b37-89dd-0338d080971d",
+      "name": "Function - Expand RSS Sources",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        416,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "f06bc7c9-9749-4d4a-881e-663c4860cdf8",
+      "name": "RSS Reader",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        624,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const seen = new Set();\nreturn items.filter(item => {\n  const title = (item.json.title || '').trim();\n  if (seen.has(title)) return false;\n  seen.add(title);\n  return true;\n});"
+      },
+      "id": "24907952-6938-4253-9b77-957b3ec4bb9b",
+      "name": "Function - Filter & Deduplicate",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        816,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const negatives = ['crash','loss','decline'];\nconst positives = ['rise','gain','record'];\nreturn items.map(item => {\n  let score = 0;\n  const t = (item.json.title + ' ' + (item.json.contentSnippet||'')).toLowerCase();\n  negatives.forEach(w => t.includes(w) && (score -= 1));\n  positives.forEach(w => t.includes(w) && (score += 1));\n  item.json.sentiment = score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral';\n  return item;\n});"
+      },
+      "id": "9b020347-7fc0-4e9c-bc2c-5bff415b86e0",
+      "name": "Function - Sentiment Scoring",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:11434/api/generate",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "ba22f471-3f3b-4b95-b8a8-24457228e7fb",
+      "name": "HTTP - Ollama Local Summarizer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { html: $json.response || '', text: ($json.response || '').replace(/<[^>]+>/g,'') } }];"
+      },
+      "id": "539a1dbb-426e-40cb-85e1-69b127de88f9",
+      "name": "Function - Format Newsletter",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "fileName": "/data/newsletters/daily-newsletter.pdf",
+        "options": {}
+      },
+      "id": "6a23ad13-8db5-4992-a7cd-9ddabea81751",
+      "name": "Write Binary File - PDF",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:5002/api/tts",
+        "jsonParameters": true,
+        "options": {}
+      },
+      "id": "195cc9ce-c2da-466d-b5d4-7f61e424b1ae",
+      "name": "HTTP - Coqui TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1616,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "user@example.com",
+        "subject": "Daily AI Summary",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "379b25d4-80fa-48e1-baf2-20dd555634ce",
+      "name": "Gmail - Send",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        176
+      ],
+      "webhookId": "3292b454-f806-4681-b0c1-956221709b77"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId || '' }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "id": "c53bfe32-5d29-4810-9a15-968018fad75c",
+      "name": "Telegram - Send",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        336
+      ],
+      "webhookId": "de0fec9a-f0c8-484c-bd92-1932aeeebdb2"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "GOOGLE_SHEET_ID",
+        "range": "A1",
+        "options": {}
+      },
+      "id": "3ed43795-6adc-4462-958f-a18b80230ca7",
+      "name": "Google Sheets - Archive",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        176
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "475f934c-9202-44be-81bf-cbb55bd06eb3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8530c11e1867c3b459124de6042ebc6fe4c58fb22beda1a1d0f97dfa6aab17d"
+  },
+  "id": "J9FKhtrw2jZjEMVI",
+  "tags": []
+}

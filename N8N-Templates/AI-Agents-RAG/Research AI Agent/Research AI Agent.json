@@ -1,0 +1,256 @@
+{
+  "name": "Research AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Company }}",
+        "options": {
+          "systemMessage": "=You are an expert research agent. You will be given the name of a competitor, and you will use your serpapi tool to do research about them and summarize what they've been up to so that we can stay ahead of them"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -160,
+        -48
+      ],
+      "id": "7aa97cf9-6245-4115-8547-545478929bf7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-3.5-turbo",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        176
+      ],
+      "id": "50c2fd10-dd91-4a64-bed1-526573fcf773",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "kp95wwUJtyThz18O",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        176
+      ],
+      "id": "b4217b0d-532a-4520-89b6-abe1a8323f92",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "PuXl9aSGbgKpmAFn",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -528,
+        -48
+      ],
+      "id": "ffb9b2da-64a4-4fb3-a261-1f097690d0eb",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1tfYteJHOonnXBPiYhxcx7vh2RDaGzhMkxf-VW8F62ks",
+          "mode": "list",
+          "cachedResultName": "Competitor Research",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tfYteJHOonnXBPiYhxcx7vh2RDaGzhMkxf-VW8F62ks/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tfYteJHOonnXBPiYhxcx7vh2RDaGzhMkxf-VW8F62ks/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -336,
+        -48
+      ],
+      "id": "c87b6f8c-df30-4c07-9448-cbb5303bfa53",
+      "name": "Get Competitors",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gLBSMSao2muVjMLE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tfYteJHOonnXBPiYhxcx7vh2RDaGzhMkxf-VW8F62ks",
+          "mode": "list",
+          "cachedResultName": "Competitor Research",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tfYteJHOonnXBPiYhxcx7vh2RDaGzhMkxf-VW8F62ks/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tfYteJHOonnXBPiYhxcx7vh2RDaGzhMkxf-VW8F62ks/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Company": "={{ $('Get Competitors').item.json.Company }}",
+            "Findings": "={{ $json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Findings",
+              "displayName": "Findings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        192,
+        -48
+      ],
+      "id": "c362ba12-9094-4102-8a7d-d894d9731320",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gLBSMSao2muVjMLE",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Competitors": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4e1d5526-afa5-49ff-b04b-8a4a08b29c3f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "813932ac04e3ea22b2e49c245364be9cb4d3f56bdd7b91209b52d1bb40e192b9"
+  },
+  "id": "iAQ0ajyj0LR9rki3",
+  "tags": []
+}

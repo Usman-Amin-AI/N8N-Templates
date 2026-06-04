@@ -1,0 +1,191 @@
+{
+  "name": "AI News Agent - SaaS (Free Version)",
+  "nodes": [
+    {
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-820, 320],
+      "parameters": {}
+    },
+    {
+      "id": "schedule-trigger",
+      "name": "Schedule Trigger (User Configurable)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [-820, 520],
+      "parameters": {
+        "rule": {
+          "interval": [{ "triggerAtHour": 7 }]
+        }
+      }
+    },
+    {
+      "id": "rss-dynamic",
+      "name": "Function - Expand RSS Sources",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-600, 320],
+      "parameters": {
+        "functionCode": "const rss = ['https://www.theverge.com/rss/index.xml','https://feeds.bbci.co.uk/news/world/rss.xml'];\nreturn rss.map(u => ({ json: { url: u } }));"
+      }
+    },
+    {
+      "id": "rss-reader",
+      "name": "RSS Reader",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [-400, 320],
+      "parameters": {
+        "url": "={{ $json.url }}"
+      }
+    },
+    {
+      "id": "filter-keywords",
+      "name": "Function - Filter & Deduplicate",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [-200, 320],
+      "parameters": {
+        "functionCode": "const seen = new Set();\nreturn items.filter(item => {\n  const title = (item.json.title || '').trim();\n  if (seen.has(title)) return false;\n  seen.add(title);\n  return true;\n});"
+      }
+    },
+    {
+      "id": "sentiment",
+      "name": "Function - Sentiment Scoring",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [0, 320],
+      "parameters": {
+        "functionCode": "const negatives = ['crash','loss','decline'];\nconst positives = ['rise','gain','record'];\nreturn items.map(item => {\n  let score = 0;\n  const t = (item.json.title + ' ' + (item.json.contentSnippet||'')).toLowerCase();\n  negatives.forEach(w => t.includes(w) && (score -= 1));\n  positives.forEach(w => t.includes(w) && (score += 1));\n  item.json.sentiment = score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral';\n  return item;\n});"
+      }
+    },
+    {
+      "id": "ollama-llm",
+      "name": "HTTP - Ollama Local Summarizer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [200, 320],
+      "parameters": {
+        "url": "http://localhost:11434/api/generate",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "sendBody": "={{ { model: 'llama3', prompt: `You are an expert AI news summarizer acting as the backend brain for a production SaaS application. Your objective is to transform raw RSS feed articles into a high-quality, structured daily newsletter that is informative, engaging, and formatted for multiple delivery channels (HTML email, Slack, PDF, TTS).\\n\\nFollow these rules carefully:\\n\\n1. Tone & Style: Be concise, factual, professional. Use engaging but neutral tone.\\n2. Content: Remove duplicates, respect user filters, include key facts only.\\n3. Structure: For each article include headline, 2-3 sentence summary, sentiment, keywords, source, link.\\n4. Output Format: HTML with sections (🌍 World News, 💻 Tech News).\\n5. Language: Always output in English.\\n6. Safety: Exclude disallowed or unsafe content.\\n7. Finish with: — End of Daily Summary —\\n\\nToday is ${new Date().toDateString()}. Articles: ${JSON.stringify($items().map(i => i.json))}` } }}"
+      }
+    },
+    {
+      "id": "format-newsletter",
+      "name": "Function - Format Newsletter",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 320],
+      "parameters": {
+        "functionCode": "return [{ json: { html: $json.response || '', text: ($json.response || '').replace(/<[^>]+>/g,'') } }];"
+      }
+    },
+    {
+      "id": "write-pdf",
+      "name": "Write Binary File - PDF",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [600, 320],
+      "parameters": {
+        "fileName": "/data/newsletters/daily-newsletter.pdf",
+        "data": "={{ Buffer.from($json.html) }}"
+      }
+    },
+    {
+      "id": "tts-coqui",
+      "name": "HTTP - Coqui TTS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [600, 520],
+      "parameters": {
+        "url": "http://localhost:5002/api/tts",
+        "method": "POST",
+        "jsonParameters": true,
+        "sendBody": "={{ { text: $json.text } }}"
+      }
+    },
+    {
+      "id": "send-email",
+      "name": "Gmail - Send",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [800, 320],
+      "parameters": {
+        "sendTo": "user@example.com",
+        "subject": "Daily AI Summary",
+        "emailType": "html",
+        "message": "={{ $json.html }}"
+      }
+    },
+    {
+      "id": "send-telegram",
+      "name": "Telegram - Send",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [800, 480],
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $json.telegramChatId || '' }}",
+        "text": "={{ $json.text }}"
+      }
+    },
+    {
+      "id": "archive-sheets",
+      "name": "Google Sheets - Archive",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [1000, 320],
+      "parameters": {
+        "operation": "append",
+        "sheetId": "GOOGLE_SHEET_ID",
+        "range": "A1",
+        "valueInputMode": "RAW",
+        "options": {
+          "values": "={{ [[ new Date().toISOString(), $json.text ]] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "manual-trigger": {
+      "main": [[{ "node": "rss-dynamic", "type": "main", "index": 0 }]]
+    },
+    "schedule-trigger": {
+      "main": [[{ "node": "rss-dynamic", "type": "main", "index": 0 }]]
+    },
+    "rss-dynamic": {
+      "main": [[{ "node": "rss-reader", "type": "main", "index": 0 }]]
+    },
+    "rss-reader": {
+      "main": [[{ "node": "filter-keywords", "type": "main", "index": 0 }]]
+    },
+    "filter-keywords": {
+      "main": [[{ "node": "sentiment", "type": "main", "index": 0 }]]
+    },
+    "sentiment": {
+      "main": [[{ "node": "ollama-llm", "type": "main", "index": 0 }]]
+    },
+    "ollama-llm": {
+      "main": [[{ "node": "format-newsletter", "type": "main", "index": 0 }]]
+    },
+    "format-newsletter": {
+      "main": [
+        [
+          { "node": "write-pdf", "type": "main", "index": 0 },
+          { "node": "tts-coqui", "type": "main", "index": 0 },
+          { "node": "send-email", "type": "main", "index": 0 },
+          { "node": "send-telegram", "type": "main", "index": 0 },
+          { "node": "archive-sheets", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "free-saas-v1"
+}
