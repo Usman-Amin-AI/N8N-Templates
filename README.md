@@ -118,7 +118,7 @@ N8N-Templates/
 │   ├── PDF_and_Document_Processing/
 │   └── [Other integration templates]
 │
-└── img/                              # Documentation images and assets
+└── Image/                              # Documentation images and assets
 ```
 
 ---
@@ -757,3 +757,10 @@ For the latest updates and contributions, check the repository regularly. This c
 ---
 
 *This README was generated as part of the N8N Templates Professional Organization Initiative. For contributions or corrections, please open an issue or submit a pull request.*
+
+---
+
+👨‍💻 Author
+Usman Amin (Usman-Amin-AI) © 2026
+
+---
