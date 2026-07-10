@@ -1,0 +1,161 @@
+{
+  "name": "Xquik Campaign Mention Brief",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "145d894f-2ff3-4f5d-a7c6-79d29337962f",
+      "name": "When Clicking Execute Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-760, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5961bc86-65ad-46d2-b50c-350826b502b0",
+              "name": "campaignQuery",
+              "value": "n8n automation",
+              "type": "string"
+            },
+            {
+              "id": "75cc58b5-82dc-48a9-b1e3-625c950ffbf0",
+              "name": "resultLimit",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "248c9e77-e676-45a1-8acc-61716d2080df",
+              "name": "minimumLikes",
+              "value": 0,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6ff14228-3b25-4f4a-907c-f75449b31fd8",
+      "name": "Campaign Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-540, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://xquik.com/api/v1/x/tweets/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.campaignQuery }}"
+            },
+            {
+              "name": "queryType",
+              "value": "Latest"
+            },
+            {
+              "name": "limit",
+              "value": "={{ $json.resultLimit }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "97b981cb-2be1-41c9-bb67-0761bcdbf21a",
+      "name": "Search X with Xquik",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-300, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const settings = $('Campaign Settings').first().json;\nconst response = $input.first().json;\nconst tweets = Array.isArray(response.tweets) ? response.tweets : [];\nconst asCount = (value) => {\n  const count = Number(value ?? 0);\n  return Number.isFinite(count) ? count : 0;\n};\nconst minimumLikes = asCount(settings.minimumLikes);\n\nconst qualified = tweets\n  .filter((tweet) => {\n    const username = tweet.author?.username;\n    return (\n      typeof tweet.id === 'string' &&\n      typeof tweet.text === 'string' &&\n      tweet.text.trim().length > 0 &&\n      typeof username === 'string' &&\n      username.length > 0 &&\n      asCount(tweet.likeCount) >= minimumLikes\n    );\n  })\n  .map((tweet) => {\n    const likes = asCount(tweet.likeCount);\n    const reposts = asCount(tweet.retweetCount);\n    const replies = asCount(tweet.replyCount);\n    const quotes = asCount(tweet.quoteCount);\n    return {\n      id: tweet.id,\n      text: tweet.text.trim(),\n      author: tweet.author.name ?? tweet.author.username,\n      username: tweet.author.username,\n      createdAt: tweet.createdAt ?? null,\n      likes,\n      reposts,\n      replies,\n      quotes,\n      engagement: likes + reposts + replies + quotes,\n      url: `https://x.com/${tweet.author.username}/status/${tweet.id}`,\n    };\n  })\n  .sort((left, right) => right.engagement - left.engagement);\n\nif (qualified.length === 0) {\n  return [{\n    json: {\n      resultType: 'diagnostic',\n      status: 'no_qualified_mentions',\n      query: settings.campaignQuery,\n      returnedTweets: tweets.length,\n      message: 'No posts met the current campaign filters.',\n    },\n  }];\n}\n\nconst engagementTotals = qualified.reduce(\n  (totals, mention) => ({\n    likes: totals.likes + mention.likes,\n    reposts: totals.reposts + mention.reposts,\n    replies: totals.replies + mention.replies,\n    quotes: totals.quotes + mention.quotes,\n  }),\n  { likes: 0, reposts: 0, replies: 0, quotes: 0 },\n);\n\nreturn [{\n  json: {\n    resultType: 'campaign_brief',\n    query: settings.campaignQuery,\n    returnedTweets: tweets.length,\n    qualifiedMentions: qualified.length,\n    engagementTotals,\n    topMentions: qualified.slice(0, 10),\n  },\n}];"
+      },
+      "id": "142a0c67-76a8-4a99-b0e8-7fc65786453e",
+      "name": "Build Campaign Brief",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-60, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "bdcb5e20-ff7f-415c-82a8-f5763e63d7d1",
+              "leftValue": "={{ $json.resultType }}",
+              "rightValue": "campaign_brief",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3f4972ab-6764-40be-8eb7-f2d30eb8e321",
+      "name": "Has Qualified Mentions",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [180, 0]
+    },
+    {
+      "parameters": {},
+      "id": "83baaed1-6778-42b7-943b-8f6a2967f523",
+      "name": "Review Campaign Brief",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [420, -100]
+    },
+    {
+      "parameters": {},
+      "id": "d41a137d-df6e-4b6c-98a1-682868e8c456",
+      "name": "No Qualified Mentions",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [420, 100]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Clicking Execute Workflow": {
+      "main": [[{"node": "Campaign Settings", "type": "main", "index": 0}]]
+    },
+    "Campaign Settings": {
+      "main": [[{"node": "Search X with Xquik", "type": "main", "index": 0}]]
+    },
+    "Search X with Xquik": {
+      "main": [[{"node": "Build Campaign Brief", "type": "main", "index": 0}]]
+    },
+    "Build Campaign Brief": {
+      "main": [[{"node": "Has Qualified Mentions", "type": "main", "index": 0}]]
+    },
+    "Has Qualified Mentions": {
+      "main": [
+        [{"node": "Review Campaign Brief", "type": "main", "index": 0}],
+        [{"node": "No Qualified Mentions", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "680674bb-c6f5-486e-b94f-9fa1b8ab7269",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
