@@ -1,27 +1,27 @@
 # 🚀 N8N Workflow Templates - Comprehensive Collection
 
-> A professional, well-organized repository of 130+ automation workflow templates for n8n, designed to accelerate workflow development across diverse business domains and integration scenarios.
+> A professional, well-organized repository of 99 automation workflow templates for n8n, designed to accelerate workflow development across diverse business domains and integration scenarios.
 
 ---
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Project Statistics](#project-statistics)
-- [Directory Structure](#directory-structure)
-- [Category Guide](#category-guide)
-- [Quick Start](#quick-start)
-- [Technology Stack](#technology-stack)
-- [Use Cases by Domain](#use-cases-by-domain)
-- [Getting Started with Templates](#getting-started-with-templates)
-- [Best Practices](#best-practices)
-- [Contributing](#contributing)
+- [Overview](#-overview)
+- [Project Statistics](#-project-statistics)
+- [Directory Structure](#-directory-structure)
+- [Category Guide & Roadmap](#-category-guide--roadmap)
+- [Quick Start](#-quick-start)
+- [Technology Stack](#-technology-stack)
+- [Use Cases by Domain](#-use-cases-by-domain)
+- [Getting Started with Templates](#-getting-started-with-templates)
+- [Best Practices](#-best-practices)
+- [Contributing](#-contributing)
 
 ---
 
 ## 🎯 Overview
 
-This repository contains a comprehensive collection of **130+ n8n workflow templates**, meticulously organized into 12 major categories. Each template represents a production-ready or learning-ready workflow that demonstrates best practices for automation, integration, and AI-powered processes.
+This repository contains **99 n8n workflow templates** in 4 current workflow categories. Each template represents a production-ready or learning-ready workflow for automation, integration, and AI-powered processes. The category guide also records the planned collection structure.
 
 ### Key Features
 
@@ -38,13 +38,12 @@ This repository contains a comprehensive collection of **130+ n8n workflow templ
 
 | Metric | Count |
 |--------|-------|
-| **Total Workflow Templates** | 130+ |
-| **Organized Categories** | 12 |
-| **Subdirectories/Modules** | 24 |
-| **Integration Platforms** | 50+ |
-| **AI/LLM Implementations** | 50+ |
-| **Email Automation Templates** | 22 |
-| **Database Templates** | 4 |
+| **Total Workflow Templates** | 99 |
+| **Current Workflow Categories** | 4 |
+| **AI Agent & RAG Templates** | 55 |
+| **Communication Templates** | 41 |
+| **Database & Vector Templates** | 2 |
+| **Social Media Templates** | 1 |
 
 ---
 
@@ -52,80 +51,20 @@ This repository contains a comprehensive collection of **130+ n8n workflow templ
 
 ```
 N8N-Templates/
-│
-├── 01-Email-Communication/           # Email, Gmail, Outlook, IMAP workflows (22 files)
-│   ├── Emai-Gmail/
-│   ├── Gmail_and_Email_Automation/
-│   └── [22 email-related templates]
-│
-├── 02-AI-Agents-RAG/                 # AI agents, RAG systems, chatbots (50 files)
-│   ├── AI_Research_RAG_and_Data_Analysis/
-│   ├── Research AI Agent/
-│   ├── [50 AI and RAG templates]
-│   └── [Specialized agent systems]
-│
-├── 03-Database-Vector-Storage/       # Database, Vector DB, Storage (4 files)
-│   ├── MongoDB workflows
-│   ├── PostgreSQL operations
-│   ├── Pinecone & Qdrant templates
-│   └── [4 database templates]
-│
-├── 04-Google-Workspace/              # Google Sheets, Drive, Analytics (10 files)
-│   ├── Google_Drive_and_Google_Sheets/
-│   ├── Gmail_and_Email_Automation/
-│   └── [10 Google integration templates]
-│
-├── 05-Communication-Platforms/       # Discord, Slack, Telegram, WhatsApp (2+ files)
-│   ├── Discord/
-│   ├── Slack/
-│   ├── Telegram/
-│   ├── WhatsApp/
-│   └── [Chat platform templates]
-│
-├── 06-Social-Media/                  # Instagram, Twitter, YouTube, LinkedIn (10 files)
-│   ├── Instagram_Twitter_Social_Media/
-│   ├── Youtube/
-│   └── [10 social media templates]
-│
-├── 07-Content-Creation-Media/        # Image generation, video, banners (10 files)
-│   ├── Ultimate Media Agent Army/
-│   ├── [Content automation templates]
-│   └── [10 media creation files]
-│
-├── 08-Web-Scraping-Data/             # Web scraping, news, data extraction (8 files)
-│   ├── [Scraping workflows]
-│   ├── [News aggregation]
-│   └── [8 scraping templates]
-│
-├── 09-Forms-Surveys/                 # Forms, surveys, data collection (2+ files)
-│   ├── Forms_and_Surveys/
-│   └── [Form-based workflows]
-│
-├── 10-E-Commerce-Business/           # Cart recovery, HR, recruitment (5+ files)
-│   ├── HR_and_Recruitment/
-│   ├── Subscription Manager/
-│   ├── [E-commerce automation]
-│   └── [5 business templates]
-│
-├── 11-Developer-Tools/               # LLMs, SQL, OpenAI, Developer tools (7 files)
-│   ├── OpenAI_and_LLMs/
-│   ├── [Developer utilities]
-│   └── [7 developer templates]
-│
-├── 12-Other-Integrations/            # WordPress, PDF, Notion, misc (5+ files)
-│   ├── WordPress/
-│   ├── Notion/
-│   ├── PDF_and_Document_Processing/
-│   └── [Other integration templates]
-│
-└── Image/                              # Documentation images and assets
+├── AI-Agents-RAG/                    # AI agents, RAG systems, and chatbots (55 files)
+├── Communication-Platforms/         # Discord, Slack, Telegram, and WhatsApp (41 files)
+├── Database-Vector-Storage/          # Database and vector storage workflows (2 files)
+├── Social-Media/                     # Social listening and research workflows (1 file)
+└── Image/                            # Documentation images and assets
 ```
 
 ---
 
-## 📚 Category Guide
+## 📚 Category Guide & Roadmap
 
-### 1️⃣ Email Communication (22 Templates)
+Categories with counts are present in the repository today. Categories marked **Planned** describe the intended collection structure.
+
+### 1️⃣ Email Communication (Planned)
 Automate all email-related workflows including Gmail, Outlook, and custom email systems.
 
 **Key Templates:**
@@ -145,7 +84,7 @@ Automate all email-related workflows including Gmail, Outlook, and custom email 
 
 ---
 
-### 2️⃣ AI Agents & RAG Systems (50 Templates)
+### 2️⃣ AI Agents & RAG Systems (55 Templates)
 The largest category featuring advanced AI agents, RAG systems, and intelligent automation.
 
 **Key Templates:**
@@ -171,7 +110,7 @@ The largest category featuring advanced AI agents, RAG systems, and intelligent 
 
 ---
 
-### 3️⃣ Database & Vector Storage (4 Templates)
+### 3️⃣ Database & Vector Storage (2 Templates)
 Database operations, vector database management, and data retrieval systems.
 
 **Key Templates:**
@@ -190,7 +129,7 @@ Database operations, vector database management, and data retrieval systems.
 
 ---
 
-### 4️⃣ Google Workspace (10 Templates)
+### 4️⃣ Google Workspace (Planned)
 Google Sheets, Google Drive, and Google Analytics automation.
 
 **Key Templates:**
@@ -208,7 +147,7 @@ Google Sheets, Google Drive, and Google Analytics automation.
 
 ---
 
-### 5️⃣ Communication Platforms (2+ Templates + Subdirectories)
+### 5️⃣ Communication Platforms (41 Templates)
 Multi-platform communication automation including Discord, Slack, Telegram, WhatsApp.
 
 **Key Templates:**
@@ -225,7 +164,7 @@ Multi-platform communication automation including Discord, Slack, Telegram, What
 
 ---
 
-### 6️⃣ Social Media Automation (10 Templates)
+### 6️⃣ Social Media Automation (1 Template)
 Social media posting, content distribution, and engagement automation.
 
 **Key Templates:**
@@ -244,7 +183,7 @@ Social media posting, content distribution, and engagement automation.
 
 ---
 
-### 7️⃣ Content Creation & Media (10 Templates)
+### 7️⃣ Content Creation & Media (Planned)
 Image generation, video processing, and multimedia creation.
 
 **Key Templates:**
@@ -263,7 +202,7 @@ Image generation, video processing, and multimedia creation.
 
 ---
 
-### 8️⃣ Web Scraping & Data (8 Templates)
+### 8️⃣ Web Scraping & Data (Planned)
 Web scraping, news aggregation, and data extraction workflows.
 
 **Key Templates:**
@@ -282,7 +221,7 @@ Web scraping, news aggregation, and data extraction workflows.
 
 ---
 
-### 9️⃣ Forms & Surveys (2+ Templates)
+### 9️⃣ Forms & Surveys (Planned)
 Form handling, survey distribution, and data collection workflows.
 
 **Key Templates:**
@@ -300,7 +239,7 @@ Form handling, survey distribution, and data collection workflows.
 
 ---
 
-### 🔟 E-Commerce & Business (5+ Templates)
+### 🔟 E-Commerce & Business (Planned)
 E-commerce automation, HR, recruitment, and business operations.
 
 **Key Templates:**
@@ -319,7 +258,7 @@ E-commerce automation, HR, recruitment, and business operations.
 
 ---
 
-### 1️⃣1️⃣ Developer Tools (7 Templates)
+### 1️⃣1️⃣ Developer Tools (Planned)
 Development utilities, SQL operations, and technical automation.
 
 **Key Templates:**
@@ -338,7 +277,7 @@ Development utilities, SQL operations, and technical automation.
 
 ---
 
-### 1️⃣2️⃣ Other Integrations (5+ Templates)
+### 1️⃣2️⃣ Other Integrations (Planned)
 Miscellaneous integrations including WordPress, Notion, PDF processing.
 
 **Key Templates:**
@@ -614,27 +553,23 @@ Testing Workflow:
    - ✅ Working example
    - ✅ Documentation
 
+Validate every changed workflow before opening a pull request:
+
+```bash
+node scripts/validate-workflows.mjs "N8N-Templates/path/to/workflow.json"
+```
+
 ---
 
 ## 📊 Workflow Statistics & Analytics
 
-### Coverage by Integration Type
-| Integration | Count | Popularity |
-|-------------|-------|------------|
-| OpenAI/LLMs | 50+ | ⭐⭐⭐⭐⭐ |
-| Email (Gmail/Outlook) | 22 | ⭐⭐⭐⭐⭐ |
-| Vector Databases | 15 | ⭐⭐⭐⭐⭐ |
-| Social Media | 10 | ⭐⭐⭐⭐ |
-| Airtable | 8 | ⭐⭐⭐⭐ |
-| Google Workspace | 10 | ⭐⭐⭐⭐ |
-| Web Scraping | 8 | ⭐⭐⭐⭐ |
-| Discord/Slack | 6 | ⭐⭐⭐ |
-| Database (SQL/NoSQL) | 6 | ⭐⭐⭐ |
-
-### Complexity Distribution
-- **Beginner** (Simple, single integration): 30%
-- **Intermediate** (Multiple integrations): 50%
-- **Advanced** (Complex logic, AI): 20%
+### Coverage by Repository Folder
+| Folder | Workflow Count |
+|--------|----------------|
+| AI Agents & RAG | 55 |
+| Communication Platforms | 41 |
+| Database & Vector Storage | 2 |
+| Social Media | 1 |
 
 ---
 
@@ -642,17 +577,17 @@ Testing Workflow:
 
 ### N8N Documentation
 - [Official n8n Docs](https://docs.n8n.io/)
-- [Node Reference](https://docs.n8n.io/nodes/)
+- [Node Reference](https://docs.n8n.io/integrations/)
 - [API Reference](https://docs.n8n.io/api/)
 
 ### AI & Automation
-- [OpenAI API Guide](https://platform.openai.com/docs)
+- [OpenAI API Guide](https://developers.openai.com/api/docs)
 - [Vector Database Basics](https://www.pinecone.io/)
 - [RAG Patterns](https://docs.llamaindex.ai/)
 
 ### Integration Guides
 - [Gmail API Setup](https://developers.google.com/gmail/api)
-- [Slack Bolt](https://slack.dev/bolt/)
+- [Slack Bolt](https://docs.slack.dev/tools/bolt/)
 - [Discord.py](https://discordpy.readthedocs.io/)
 
 ---
@@ -746,7 +681,7 @@ This comprehensive collection was built from community contributions, official n
 
 ## 📝 Last Updated
 
-**June 2026** | **130+ Templates** | **12 Categories** | **50+ Integrations**
+**July 2026** | **99 Templates** | **4 Current Categories**
 
 For the latest updates and contributions, check the repository regularly. This collection is continuously growing with new templates and improvements.
 
