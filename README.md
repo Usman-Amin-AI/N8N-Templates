@@ -553,6 +553,12 @@ Testing Workflow:
    - ✅ Working example
    - ✅ Documentation
 
+Validate every changed workflow before opening a pull request:
+
+```bash
+node scripts/validate-workflows.mjs "N8N-Templates/path/to/workflow.json"
+```
+
 ---
 
 ## 📊 Workflow Statistics & Analytics

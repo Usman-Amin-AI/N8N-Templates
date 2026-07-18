@@ -29,3 +29,5 @@ The **No Qualified Mentions** branch returns a diagnostic item instead of an emp
 Post text is untrusted external content. Review it before using it in a report, prompt, or publishing workflow.
 
 See the [Xquik API quickstart](https://docs.xquik.com/quickstart) and [OpenAPI document](https://xquik.com/openapi.json) for current authentication and response details.
+
+Xquik is an independent third-party service. Not affiliated with X Corp. "Twitter" and "X" are trademarks of X Corp.
